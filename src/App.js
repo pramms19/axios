@@ -6,75 +6,46 @@ import AddTask from "./component/AddTask";
 import Footer from "./component/Footer";
 import About from "./component/About";
 
+import { axiosClient } from "./api";
+
 const App = () => {
   const [showAddTask, setShowAddTask] = useState(false);
   const [tasks, setTasks] = useState([]);
 
   useEffect(() => {
-    const getTasks = async () => {
-      const tasksFromServer = await fetchTasks();
-      setTasks(tasksFromServer);
-    };
-    getTasks();
+    fetchTasks();
   }, []);
-
-  // fetch task
-
-  const fetchTask = async (id) => {
-    const res = await fetch(`http://localhost:5000/tasks/${id}`);
-    const data = await res.json();
-
-    return data;
-  };
 
   // fetch tasks
 
   const fetchTasks = async (id) => {
-    const res = await fetch("http://localhost:5000/tasks");
-    const data = await res.json();
+    const res = await axiosClient.get("/tasks");
 
-    return data;
+    setTasks(res?.data);
   };
 
   // Add tasks
   const addTask = async (task) => {
-    const res = await fetch(`http://localhost:5000/tasks`, {
-      method: "POST",
-      headers: {
-        "Content-type": "application/json",
-      },
-      body: JSON.stringify(task),
-    });
+    const res = await axiosClient.post(`/tasks`, task);
 
-    const data = await res.json();
-    setTasks([...tasks, data]);
-    // const id = Math.floor(Math.random() * 10000) + 1;
-    // const newTask = { id, ...task };
-    // setTasks([...tasks, newTask]);
+    const data = await res.data;
+    setTasks([...tasks, { id: data.id, ...task }]);
   };
 
   // Delete tasks
   const deleteTask = async (id) => {
-    await fetch(`http://localhost:5000/tasks/${id}`, {
-      method: "DELETE",
-    });
+    await axiosClient.delete(`/tasks/${id}`);
 
     setTasks(tasks.filter((task) => task.id !== id));
   };
 
   //toggle reminder
   const toggleReminder = async (id) => {
-    const taskToToggle = await fetchTask(id);
+    const taskToToggle = await axiosClient(id);
     const updTask = { ...taskToToggle, reminder: !taskToToggle.reminder };
-    const res = await fetch(`http://localhost:5000/tasks/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-type": "application/json",
-      },
-      body: JSON.stringify(updTask),
-    });
+    const res = await axiosClient.put(`/tasks/${id}`, updTask);
 
-    const data = await res.json();
+    const data = await res.data;
     setTasks(
       tasks.map((task) =>
         task.id === id ? { ...task, reminder: !data.reminder } : task
